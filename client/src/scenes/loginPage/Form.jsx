@@ -7,7 +7,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { EditOutlinedIcon } from "@mui/icons-material/EditOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
@@ -51,14 +51,50 @@ const Form = () => {
   const { palette } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const isNonMobile = useMediaQuery("(min-width:600x)");
+  const isNonMobile = useMediaQuery("(min-width:600px)");
   const isLogin = pageType === "login";
   const isRegister = pageType === "register";
 
   const register = async (values, onSubmitProps) => {
     // this allows us to send form info with image
     const formData = new FormData();
-    for 
+    for (let value in values) {
+      formData.append(value, values[value]);
+    }
+    formData.append("picturePath", values.picture.name);
+
+    const savedUserResponse = await fetch(
+      "http://localhost:3001/auth/register",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+    const savedUser = await savedUserResponse.json();
+    onSubmitProps.resetForm();
+
+    if (savedUser) {
+      setPageType("login");
+    }
+  };
+
+  const login = async (values, onSubmitProps) => {
+    const loggedInResponse = await fetch("http://localhost:3001/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    const loggedIn = await loggedInResponse.json();
+    onSubmitProps.resetForm();
+    if (loggedIn) {
+      dispatch(
+        setLogin({
+          user: loggedIn.user,
+          token: loggedIn.token,
+        })
+      );
+      navigate("/home");
+    }
   };
 
   const handleFormSubmit = async (values, onSubmitProps) => {
@@ -69,8 +105,7 @@ const Form = () => {
   return (
     <Formik
       onSubmit={handleFormSubmit}
-      initial
-      values={isLogin ? initialValuesLogin : initialValuesRegister}
+      initialValues={isLogin ? initialValuesLogin : initialValuesRegister}
       validationSchema={isLogin ? loginSchema : registerSchema}
     >
       {({
@@ -158,7 +193,7 @@ const Form = () => {
                         p="1rem"
                         sx={{ "&:hover": { cursor: "pointer" } }}
                       >
-                        <input {...getInputProps()} />{" "}
+                        <input {...getInputProps()} />
                         {!values.picture ? (
                           <p>Add Picture Here</p>
                         ) : (
@@ -173,6 +208,7 @@ const Form = () => {
                 </Box>
               </>
             )}
+
             <TextField
               label="Email"
               onBlur={handleBlur}
@@ -195,6 +231,7 @@ const Form = () => {
               sx={{ gridColumn: "span 4" }}
             />
           </Box>
+
           {/* BUTTONS */}
           <Box>
             <Button
@@ -218,11 +255,14 @@ const Form = () => {
               sx={{
                 textDecoration: "underline",
                 color: palette.primary.main,
-                "&:hover": { cursor: "pointer", color: palette.primary.light },
+                "&:hover": {
+                  cursor: "pointer",
+                  color: palette.primary.light,
+                },
               }}
             >
               {isLogin
-                ? "Don't have an account? Sign up here."
+                ? "Don't have an account? Sign Up here."
                 : "Already have an account? Login here."}
             </Typography>
           </Box>
@@ -233,5 +273,3 @@ const Form = () => {
 };
 
 export default Form;
-
-// 3.07.59
